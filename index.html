@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>旅行規劃 App - Vue & Tailwind CSS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class', // 啟用深色模式
+            theme: {
+                extend: {
+                    colors: {
+                        'primary-dark': '#1e293b', // 核心深色背景
+                        'secondary-dark': '#334155', // 卡片背景
+                        'accent': '#38bdf8', // 亮色點綴 (Sky Blue)
+                        'text-light': '#f8fafc', // 淺色文字
+                        'text-muted': '#94a3b8', // 柔和文字
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+        /* 讓頁面高度佔滿視窗，確保深色背景完整 */
+        html, body, #app {
+            height: 100%;
+        }
+    </style>
+</head>
+
+<body class="bg-primary-dark text-text-light font-sans h-full">
+    
+    <div id="app" class="flex flex-col h-full">
+        <header class="p-4 bg-secondary-dark shadow-lg fixed top-0 left-0 right-0 z-10">
+            <h1 class="text-xl font-bold text-center">🗺️ {{ appName }}</h1>
+        </header>
+
+        <main class="flex-grow p-4 mt-16 mb-20 overflow-y-auto">
+            
+            <div class="grid grid-cols-3 gap-3 mb-6">
+                <button v-for="tab in tabs" :key="tab.id"
+                        @click="activeTab = tab.id"
+                        :class="['p-3 rounded-xl transition duration-200 shadow-md text-sm',
+                                 activeTab === tab.id ? 'bg-accent text-primary-dark font-semibold' : 'bg-secondary-dark text-text-light hover:bg-slate-600']">
+                    {{ tab.icon }} {{ tab.name }}
+                </button>
+            </div>
+
+            <section v-show="activeTab === 'checklist'" class="mb-8">
+                <h2 class="text-lg font-semibold mb-3 text-accent border-b border-slate-600 pb-1">✅ 行前清單</h2>
+                <div class="bg-secondary-dark p-4 rounded-xl shadow-lg">
+                    <p class="text-text-light">護照、簽證、轉換插頭... (待實作)</p>
+                </div>
+            </section>
+
+            <section v-show="activeTab === 'shopping'" class="mb-8">
+                <h2 class="text-lg font-semibold mb-3 text-accent border-b border-slate-600 pb-1">🛍️ 購物清單</h2>
+                <div class="bg-secondary-dark p-4 rounded-xl shadow-lg">
+                    <p class="text-text-light">紀念品、零食... (待實作)</p>
+                </div>
+            </section>
+
+            <section v-show="activeTab === 'expense'" class="mb-8">
+                <h2 class="text-lg font-semibold mb-3 text-accent border-b border-slate-600 pb-1">💰 支出表 / 記帳</h2>
+                <div class="bg-secondary-dark p-4 rounded-xl shadow-lg">
+                    <p class="text-text-light">每日花費紀錄... (待實作)</p>
+                </div>
+            </section>
+            
+            <section v-show="activeTab === 'itinerary'" class="mb-8">
+                <h2 class="text-lg font-semibold mb-3 text-accent border-b border-slate-600 pb-1">📅 行程表</h2>
+                <div class="bg-secondary-dark p-4 rounded-xl shadow-lg">
+                    <p class="text-text-light">Day 1: 抵達 -> 飯店 Check-in... (待實作)</p>
+                </div>
+            </section>
+            
+            <section v-show="activeTab === 'map'" class="mb-8">
+                <h2 class="text-lg font-semibold mb-3 text-accent border-b border-slate-600 pb-1">📍 地圖</h2>
+                <div class="bg-secondary-dark p-4 rounded-xl shadow-lg h-64 flex items-center justify-center">
+                    <p class="text-text-muted">地圖顯示區 (需整合 Google Maps 或其他服務)</p>
+                </div>
+            </section>
+
+            <section v-show="activeTab === 'records'" class="mb-8">
+                <h2 class="text-lg font-semibold mb-3 text-accent border-b border-slate-600 pb-1">🗄️ 資料紀錄</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-secondary-dark p-4 rounded-xl shadow-lg">
+                        <h3 class="font-bold text-accent mb-2">✈️ 機票資訊</h3>
+                        <p class="text-text-muted">航班號、起降時間... (待實作)</p>
+                    </div>
+                    <div class="bg-secondary-dark p-4 rounded-xl shadow-lg">
+                        <h3 class="font-bold text-accent mb-2">🏨 住宿資訊</h3>
+                        <p class="text-text-muted">飯店名稱、預訂號碼... (待實作)</p>
+                    </div>
+                    <div class="bg-secondary-dark p-4 rounded-xl shadow-lg">
+                        <h3 class="font-bold text-accent mb-2">🚗 交通資訊</h3>
+                        <p class="text-text-muted">租車、火車票... (待實作)</p>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <nav class="fixed bottom-0 left-0 right-0 bg-secondary-dark shadow-2xl p-2 flex justify-around items-center z-10 border-t border-slate-700">
+            <a href="#" class="flex flex-col items-center p-2 text-text-light hover:text-accent transition duration-200" @click.prevent="activeTab = 'itinerary'">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                <span class="text-xs mt-1">行程</span>
+            </a>
+            <a href="#" class="flex flex-col items-center p-2 text-text-light hover:text-accent transition duration-200" @click.prevent="activeTab = 'expense'">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V6m0 2v4m0 4v2"></path></svg>
+                <span class="text-xs mt-1">記帳</span>
+            </a>
+            <a href="#" class="flex flex-col items-center p-2 text-text-light hover:text-accent transition duration-200" @click.prevent="activeTab = 'records'">
+                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h14a2 2 0 012 2v10a2 2 0 01-2 2H5zM8 7h8m-8 4h8"></path></svg>
+                <span class="text-xs mt-1">資料</span>
+            </a>
+            <a href="#" class="flex flex-col items-center p-2 text-text-light hover:text-accent transition duration-200" @click.prevent="activeTab = 'checklist'">
+                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.001 12.001 0 0012 21a12.001 12.001 0 008.618-14.016z"></path></svg>
+                <span class="text-xs mt-1">清單</span>
+            </a>
+        </nav>
+    </div>
+
+    <script>
+        const { createApp, ref } = Vue;
+
+        createApp({
+            setup() {
+                const appName = '我的專屬旅程';
+                // 預設顯示行程表
+                const activeTab = ref('itinerary'); 
+                
+                // 主要功能區塊的列表
+                const tabs = ref([
+                    { id: 'itinerary', name: '行程表', icon: '📅' },
+                    { id: 'expense', name: '記帳', icon: '💰' },
+                    { id: 'records', name: '資料紀錄', icon: '🗄️' },
+                    { id: 'map', name: '地圖', icon: '📍' },
+                    { id: 'checklist', name: '行前清單', icon: '✅' },
+                    { id: 'shopping', name: '購物清單', icon: '🛍️' },
+                ]);
+
+                // 註：要在 Vue 中實際實現功能，你需要在這裡添加更多的 ref 和 methods，例如：
+                // const items = ref([]); 
+                // function addItem() { ... }
+
+                return {
+                    appName,
+                    activeTab,
+                    tabs,
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
