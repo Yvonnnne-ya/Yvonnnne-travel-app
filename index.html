@@ -17,7 +17,8 @@
         .glass-card { background: rgba(255, 255, 255, 0.9); border-radius: 20px; border: 1px solid rgba(250, 172, 104, 0.2); }
         .tab-active { border-bottom: 3px solid #FAAC68; color: #FAAC68; font-weight: bold; }
         .drag-handle { cursor: grab; color: #d1d5db; padding: 4px; }
-        input[type="date"] { border: none; background: transparent; outline: none; font-size: 0.75rem; color: #9ca3af; }
+        input[type="date"] { border: none; background: transparent; outline: none; font-size: 0.75rem; color: #9ca3af; cursor: pointer; }
+        input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; }
         
         /* 行程卡片左滑樣式 */
         .itinerary-container { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 16px; padding-bottom: 20px; -webkit-overflow-scrolling: touch; }
@@ -63,12 +64,12 @@
             <div class="space-y-4">
                 <div v-for="(trip, index) in trips" :key="trip.firebaseId" class="glass-card p-5 relative group border-2 border-transparent hover:border-amber-200 transition-all shadow-sm">
                     <div @click="viewTrip(trip)" class="cursor-pointer">
-                        <input v-model="trip.title" @click.stop @change="updateTripInList(trip)" class="text-lg font-bold text-stone-700 bg-transparent outline-none w-[80%]">
-                        <div class="flex items-center gap-1 mt-2">
+                        <input v-model="trip.title" @click.stop @input="updateTripInList(trip)" class="text-lg font-bold text-stone-700 bg-transparent outline-none w-[80%]">
+                        <div class="flex items-center gap-1 mt-2" @click.stop>
                             <i class="far fa-calendar-alt text-stone-400 text-xs"></i>
-                            <input type="date" v-model="trip.startDate" @click.stop @change="updateTripInList(trip)" class="w-24">
+                            <input type="date" v-model="trip.startDate" @input="updateTripInList(trip)" class="w-24">
                             <span class="text-stone-300">-</span>
-                            <input type="date" v-model="trip.endDate" @click.stop @change="updateTripInList(trip)" class="w-24">
+                            <input type="date" v-model="trip.endDate" @input="updateTripInList(trip)" class="w-24">
                         </div>
                     </div>
                     <div class="absolute top-4 right-4 flex gap-3">
@@ -96,11 +97,6 @@
             <div class="flex-1 p-5 overflow-y-auto safe-area-bottom">
                 
                 <div v-if="activeTab === 'checklist'" class="space-y-6">
-                    <section class="bg-white p-5 rounded-2xl shadow-sm border border-stone-100">
-                        <h4 class="font-bold mb-3 text-stone-700">📝 行前備註</h4>
-                        <textarea v-model="currentTrip.note" class="w-full text-sm text-stone-500 bg-stone-50 p-3 rounded-xl outline-none min-h-[100px]" placeholder="有什麼想特別註記的嗎？"></textarea>
-                    </section>
-
                     <section v-for="type in ['shopping', 'packing']" :key="type" class="bg-white p-5 rounded-2xl shadow-sm border border-stone-100">
                         <h4 class="font-bold mb-4 text-stone-700">{{ type === 'shopping' ? '🛒 購物清單' : '🎒 必帶物品' }}</h4>
                         <draggable v-model="currentTrip[type]" item-key="id" handle=".drag-handle" class="space-y-3">
@@ -114,6 +110,11 @@
                             </template>
                         </draggable>
                         <button @click="addItem(type)" class="mt-4 theme-yellow text-xs font-bold bg-amber-50 px-3 py-1.5 rounded-lg">+ 新增項目</button>
+                    </section>
+
+                    <section class="bg-white p-5 rounded-2xl shadow-sm border border-stone-100">
+                        <h4 class="font-bold mb-3 text-stone-700">📝 行前備註</h4>
+                        <textarea v-model="currentTrip.note" class="w-full text-sm text-stone-500 bg-stone-50 p-3 rounded-xl outline-none min-h-[100px]" placeholder="有什麼想特別註記的嗎?"></textarea>
                     </section>
                 </div>
 
@@ -136,7 +137,7 @@
                                 </div>
                             </template>
                         </draggable>
-                        <button @click="addItem('expenses')" class="w-full py-4 theme-yellow text-xs font-bold">+ 記一筆新的支出</button>
+                        <button @click="addItem('expenses')" class="w-full py-4 theme-yellow text-xs font-bold hover:bg-amber-50 transition-colors">+ 記一筆新的支出</button>
                     </div>
                 </div>
 
@@ -228,10 +229,14 @@
                 };
 
                 const updateTripInList = async (trip) => {
-                    const tripRef = doc(db, "trips", trip.firebaseId);
-                    const rawData = JSON.parse(JSON.stringify(trip));
-                    delete rawData.firebaseId;
-                    await updateDoc(tripRef, rawData);
+                    try {
+                        const tripRef = doc(db, "trips", trip.firebaseId);
+                        const rawData = JSON.parse(JSON.stringify(trip));
+                        delete rawData.firebaseId;
+                        await updateDoc(tripRef, rawData);
+                    } catch (e) {
+                        console.error("更新失敗:", e);
+                    }
                 };
 
                 const addNewTrip = async () => {
@@ -249,21 +254,37 @@
                 };
 
                 const addItem = (type) => {
+                    if (!currentTrip.value) return;
+                    
                     const id = Date.now().toString();
                     if (type === 'shopping' || type === 'packing') {
+                        if (!currentTrip.value[type]) {
+                            currentTrip.value[type] = [];
+                        }
                         currentTrip.value[type].push({ id, text: '', done: false });
                     } else if (type === 'expenses') {
-                        currentTrip.value.expenses.push({ id, name: '', amount: null });
+                        if (!currentTrip.value.expenses) {
+                            currentTrip.value.expenses = [];
+                        }
+                        currentTrip.value.expenses.push({ id, name: '', amount: 0 });
                     } else if (type === 'schedule') {
+                        if (!currentTrip.value.schedule) {
+                            currentTrip.value.schedule = [];
+                        }
                         currentTrip.value.schedule.push({ id, date: '', items: [] });
                     }
                 };
 
                 const addDayItem = (idx) => {
+                    if (!currentTrip.value?.schedule?.[idx]) return;
+                    if (!currentTrip.value.schedule[idx].items) {
+                        currentTrip.value.schedule[idx].items = [];
+                    }
                     currentTrip.value.schedule[idx].items.push({ id: Date.now().toString(), desc: '' });
                 };
 
                 const removeItem = (type, index) => {
+                    if (!currentTrip.value?.[type]) return;
                     currentTrip.value[type].splice(index, 1);
                 };
 
@@ -298,13 +319,27 @@
                     showInfoModal.value = true;
                 };
 
+                const viewTrip = (trip) => {
+                    currentTrip.value = JSON.parse(JSON.stringify(trip));
+                    if (!currentTrip.value.shopping) currentTrip.value.shopping = [];
+                    if (!currentTrip.value.packing) currentTrip.value.packing = [];
+                    if (!currentTrip.value.expenses) currentTrip.value.expenses = [];
+                    if (!currentTrip.value.schedule) currentTrip.value.schedule = [{ date: '', items: [] }];
+                    if (!currentTrip.value.baseInfo) currentTrip.value.baseInfo = { '交通': '', '住宿': '', '其他': '' };
+                };
+
                 const totalExpense = computed(() => {
                     return currentTrip.value?.expenses?.reduce((sum, item) => sum + (Number(item.amount) || 0), 0) || 0;
                 });
 
                 onMounted(fetchTrips);
 
-                return { trips, currentTrip, activeTab, tabs, totalExpense, loading, showInfoModal, activeInfoKey, addNewTrip, deleteTrip, viewTrip: (t) => currentTrip.value = t, saveAndExit, addItem, removeItem, addDayItem, openInfoModal, duplicateTrip, updateTripInList };
+                return { 
+                    trips, currentTrip, activeTab, tabs, totalExpense, loading, 
+                    showInfoModal, activeInfoKey, addNewTrip, deleteTrip, 
+                    viewTrip, saveAndExit, addItem, removeItem, addDayItem, 
+                    openInfoModal, duplicateTrip, updateTripInList 
+                };
             }
         }).mount('#app');
     </script>
