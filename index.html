@@ -320,12 +320,14 @@
                 };
 
                 const viewTrip = (trip) => {
-                    currentTrip.value = JSON.parse(JSON.stringify(trip));
-                    if (!currentTrip.value.shopping) currentTrip.value.shopping = [];
-                    if (!currentTrip.value.packing) currentTrip.value.packing = [];
-                    if (!currentTrip.value.expenses) currentTrip.value.expenses = [];
-                    if (!currentTrip.value.schedule) currentTrip.value.schedule = [{ date: '', items: [] }];
-                    if (!currentTrip.value.baseInfo) currentTrip.value.baseInfo = { '交通': '', '住宿': '', '其他': '' };
+                    const cloned = JSON.parse(JSON.stringify(trip));
+                    if (!cloned.shopping) cloned.shopping = [];
+                    if (!cloned.packing) cloned.packing = [];
+                    if (!cloned.expenses) cloned.expenses = [];
+                    if (!cloned.schedule || cloned.schedule.length === 0) cloned.schedule = [{ date: '', items: [] }];
+                    if (!cloned.baseInfo) cloned.baseInfo = { '交通': '', '住宿': '', '其他': '' };
+                    if (!cloned.note) cloned.note = '';
+                    currentTrip.value = cloned;
                 };
 
                 const totalExpense = computed(() => {
