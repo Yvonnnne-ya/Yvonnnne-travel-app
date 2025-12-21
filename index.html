@@ -17,6 +17,7 @@
         .glass-card { background: rgba(255, 255, 255, 0.9); border-radius: 20px; border: 1px solid rgba(250, 172, 104, 0.2); }
         .tab-active { border-bottom: 3px solid #FAAC68; color: #FAAC68; font-weight: bold; }
         .drag-handle { cursor: grab; color: #d1d5db; padding: 4px; }
+        .drag-handle:active { cursor: grabbing; }
         input[type="date"] { 
             border: none; 
             background: transparent; 
@@ -71,24 +72,28 @@
                 </button>
             </header>
 
-            <div class="space-y-4">
-                <div v-for="(trip, index) in trips" :key="trip.firebaseId" class="glass-card p-5 relative group border-2 border-transparent hover:border-amber-200 transition-all shadow-sm">
-                    <div class="cursor-pointer">
-                        <input v-model="trip.title" @click="viewTrip(trip)" @input="updateTripInList(trip)" class="text-lg font-bold text-stone-700 bg-transparent outline-none w-[80%] cursor-pointer">
-                        <div class="flex items-center gap-1 mt-2">
-                            <i class="far fa-calendar-alt text-stone-400 text-xs"></i>
-                            <input type="date" v-model="trip.startDate" @click.stop @change="updateTripInList(trip)" class="w-24">
-                            <span class="text-stone-300">-</span>
-                            <input type="date" v-model="trip.endDate" @click.stop @change="updateTripInList(trip)" class="w-24">
+            <draggable v-model="trips" item-key="firebaseId" handle=".trip-drag-handle" class="space-y-4" @end="saveTripsOrder">
+                <template #item="{element: trip, index}">
+                    <div class="glass-card p-5 relative group border-2 border-transparent hover:border-amber-200 transition-all shadow-sm">
+                        <div class="flex items-start gap-3">
+                            <i class="fas fa-grip-vertical trip-drag-handle text-stone-300 mt-1 text-sm"></i>
+                            <div @click="viewTrip(trip)" class="flex-1 cursor-pointer">
+                                <input v-model="trip.title" @click.stop @input="updateTripInList(trip)" class="text-lg font-bold text-stone-700 bg-transparent outline-none w-full mb-2">
+                                <div class="flex items-center gap-1 text-xs text-stone-400">
+                                    <i class="far fa-calendar-alt"></i>
+                                    <span>{{ trip.startDate || '未設定' }}</span>
+                                    <span>-</span>
+                                    <span>{{ trip.endDate || '未設定' }}</span>
+                                </div>
+                            </div>
                         </div>
-                        <div @click="viewTrip(trip)" class="absolute inset-0 cursor-pointer" style="z-index: 1;"></div>
+                        <div class="absolute top-4 right-4 flex gap-3" style="z-index: 20;">
+                            <button @click.stop="duplicateTrip(trip)" class="text-stone-300 hover:theme-yellow"><i class="far fa-copy"></i></button>
+                            <button @click.stop="deleteTrip(index)" class="text-stone-200 hover:text-red-400"><i class="far fa-trash-alt"></i></button>
+                        </div>
                     </div>
-                    <div class="absolute top-4 right-4 flex gap-3" style="z-index: 2;">
-                        <button @click.stop="duplicateTrip(trip)" class="text-stone-300 hover:theme-yellow"><i class="far fa-copy"></i></button>
-                        <button @click.stop="deleteTrip(index)" class="text-stone-200 hover:text-red-400"><i class="far fa-trash-alt"></i></button>
-                    </div>
-                </div>
-            </div>
+                </template>
+            </draggable>
         </div>
 
         <div v-else class="min-h-screen bg-stone-50 flex flex-col">
@@ -108,6 +113,20 @@
             <div class="flex-1 p-5 overflow-y-auto safe-area-bottom">
                 
                 <div v-if="activeTab === 'checklist'" class="space-y-6">
+                    <section class="bg-white p-5 rounded-2xl shadow-sm border border-stone-100">
+                        <h4 class="font-bold mb-4 text-stone-700">📅 旅程日期</h4>
+                        <div class="flex items-center gap-2">
+                            <div class="flex-1">
+                                <label class="text-xs text-stone-400 block mb-1">開始日期</label>
+                                <input type="date" v-model="currentTrip.startDate" class="w-full p-2 bg-stone-50 rounded-lg text-sm">
+                            </div>
+                            <div class="flex-1">
+                                <label class="text-xs text-stone-400 block mb-1">結束日期</label>
+                                <input type="date" v-model="currentTrip.endDate" class="w-full p-2 bg-stone-50 rounded-lg text-sm">
+                            </div>
+                        </div>
+                    </section>
+
                     <section v-for="type in ['shopping', 'packing']" :key="type" class="bg-white p-5 rounded-2xl shadow-sm border border-stone-100">
                         <h4 class="font-bold mb-4 text-stone-700">{{ type === 'shopping' ? '🛒 購物清單' : '🎒 必帶物品' }}</h4>
                         <draggable v-if="currentTrip[type] && currentTrip[type].length > 0" v-model="currentTrip[type]" item-key="id" handle=".drag-handle" class="space-y-3">
@@ -217,7 +236,7 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        const { createApp, ref, computed, onMounted } = Vue;
+        const { createApp, ref, computed, onMounted, nextTick } = Vue;
 
         createApp({
             components: { draggable: window.vuedraggable },
@@ -253,6 +272,12 @@
                     }
                 };
 
+                const saveTripsOrder = async () => {
+                    for (const trip of trips.value) {
+                        await updateTripInList(trip);
+                    }
+                };
+
                 const addNewTrip = async () => {
                     const title = prompt("旅程標題：", "");
                     if (!title) return;
@@ -260,7 +285,7 @@
                         title, startDate: '', endDate: '',
                         shopping: [], packing: [], expenses: [],
                         baseInfo: { '交通': '', '住宿': '', '其他': '' },
-                        schedule: [{ date: '', items: [] }],
+                        schedule: [{ id: Date.now().toString(), date: '', items: [] }],
                         note: ''
                     };
                     const docRef = await addDoc(collection(db, "trips"), newTrip);
@@ -268,46 +293,34 @@
                 };
 
                 const addItem = (type) => {
-                    console.log('addItem called with type:', type);
-                    if (!currentTrip.value) {
-                        console.error('currentTrip is null');
-                        return;
-                    }
+                    if (!currentTrip.value) return;
                     
                     const id = Date.now().toString();
                     
                     if (type === 'shopping' || type === 'packing') {
-                        if (!Array.isArray(currentTrip.value[type])) {
+                        if (!currentTrip.value[type]) {
                             currentTrip.value[type] = [];
                         }
                         currentTrip.value[type].push({ id, text: '', done: false });
-                        console.log('Added to', type, currentTrip.value[type]);
                     } else if (type === 'expenses') {
-                        if (!Array.isArray(currentTrip.value.expenses)) {
+                        if (!currentTrip.value.expenses) {
                             currentTrip.value.expenses = [];
                         }
                         currentTrip.value.expenses.push({ id, name: '', amount: 0 });
-                        console.log('Added expense', currentTrip.value.expenses);
                     } else if (type === 'schedule') {
-                        if (!Array.isArray(currentTrip.value.schedule)) {
+                        if (!currentTrip.value.schedule) {
                             currentTrip.value.schedule = [];
                         }
                         currentTrip.value.schedule.push({ id, date: '', items: [] });
-                        console.log('Added schedule day', currentTrip.value.schedule);
                     }
                 };
 
                 const addDayItem = (idx) => {
-                    console.log('addDayItem called with idx:', idx);
-                    if (!currentTrip.value?.schedule?.[idx]) {
-                        console.error('Invalid schedule index');
-                        return;
-                    }
-                    if (!Array.isArray(currentTrip.value.schedule[idx].items)) {
+                    if (!currentTrip.value?.schedule?.[idx]) return;
+                    if (!currentTrip.value.schedule[idx].items) {
                         currentTrip.value.schedule[idx].items = [];
                     }
                     currentTrip.value.schedule[idx].items.push({ id: Date.now().toString(), desc: '' });
-                    console.log('Added day item', currentTrip.value.schedule[idx].items);
                 };
 
                 const removeItem = (type, index) => {
@@ -319,10 +332,13 @@
                     if (currentTrip.value?.firebaseId) {
                         loading.value = true;
                         await updateTripInList(currentTrip.value);
+                        const tripIndex = trips.value.findIndex(t => t.firebaseId === currentTrip.value.firebaseId);
+                        if (tripIndex !== -1) {
+                            trips.value[tripIndex] = { ...currentTrip.value };
+                        }
                     }
                     currentTrip.value = null;
                     loading.value = false;
-                    fetchTrips();
                 };
 
                 const deleteTrip = async (index) => {
@@ -347,20 +363,18 @@
                 };
 
                 const viewTrip = (trip) => {
-                    console.log('viewTrip called with:', trip);
-                    const cloned = JSON.parse(JSON.stringify(trip));
-                    
-                    if (!Array.isArray(cloned.shopping)) cloned.shopping = [];
-                    if (!Array.isArray(cloned.packing)) cloned.packing = [];
-                    if (!Array.isArray(cloned.expenses)) cloned.expenses = [];
-                    if (!Array.isArray(cloned.schedule) || cloned.schedule.length === 0) {
-                        cloned.schedule = [{ date: '', items: [] }];
-                    }
-                    if (!cloned.baseInfo) cloned.baseInfo = { '交通': '', '住宿': '', '其他': '' };
-                    if (!cloned.note) cloned.note = '';
-                    
-                    currentTrip.value = cloned;
-                    console.log('currentTrip set to:', currentTrip.value);
+                    currentTrip.value = {
+                        firebaseId: trip.firebaseId,
+                        title: trip.title || '',
+                        startDate: trip.startDate || '',
+                        endDate: trip.endDate || '',
+                        shopping: trip.shopping || [],
+                        packing: trip.packing || [],
+                        expenses: trip.expenses || [],
+                        schedule: trip.schedule && trip.schedule.length > 0 ? trip.schedule : [{ id: Date.now().toString(), date: '', items: [] }],
+                        baseInfo: trip.baseInfo || { '交通': '', '住宿': '', '其他': '' },
+                        note: trip.note || ''
+                    };
                 };
 
                 const totalExpense = computed(() => {
@@ -373,7 +387,7 @@
                     trips, currentTrip, activeTab, tabs, totalExpense, loading, 
                     showInfoModal, activeInfoKey, addNewTrip, deleteTrip, 
                     viewTrip, saveAndExit, addItem, removeItem, addDayItem, 
-                    openInfoModal, duplicateTrip, updateTripInList 
+                    openInfoModal, duplicateTrip, updateTripInList, saveTripsOrder
                 };
             }
         }).mount('#app');
