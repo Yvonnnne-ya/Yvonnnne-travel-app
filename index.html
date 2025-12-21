@@ -17,8 +17,25 @@
         .glass-card { background: rgba(255, 255, 255, 0.9); border-radius: 20px; border: 1px solid rgba(250, 172, 104, 0.2); }
         .tab-active { border-bottom: 3px solid #FAAC68; color: #FAAC68; font-weight: bold; }
         .drag-handle { cursor: grab; color: #d1d5db; padding: 4px; }
-        input[type="date"] { border: none; background: transparent; outline: none; font-size: 0.75rem; color: #9ca3af; cursor: pointer; }
-        input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; }
+        input[type="date"] { 
+            border: none; 
+            background: transparent; 
+            outline: none; 
+            font-size: 0.75rem; 
+            color: #9ca3af; 
+            cursor: pointer;
+            position: relative;
+            z-index: 10;
+        }
+        input[type="date"]::-webkit-calendar-picker-indicator { 
+            cursor: pointer; 
+            position: absolute;
+            left: 0;
+            right: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+        }
         
         /* 行程卡片左滑樣式 */
         .itinerary-container { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 16px; padding-bottom: 20px; -webkit-overflow-scrolling: touch; }
@@ -63,16 +80,17 @@
 
             <div class="space-y-4">
                 <div v-for="(trip, index) in trips" :key="trip.firebaseId" class="glass-card p-5 relative group border-2 border-transparent hover:border-amber-200 transition-all shadow-sm">
-                    <div @click="viewTrip(trip)" class="cursor-pointer">
-                        <input v-model="trip.title" @click.stop @input="updateTripInList(trip)" class="text-lg font-bold text-stone-700 bg-transparent outline-none w-[80%]">
-                        <div class="flex items-center gap-1 mt-2" @click.stop>
+                    <div class="cursor-pointer">
+                        <input v-model="trip.title" @click="viewTrip(trip)" @input="updateTripInList(trip)" class="text-lg font-bold text-stone-700 bg-transparent outline-none w-[80%] cursor-pointer">
+                        <div class="flex items-center gap-1 mt-2">
                             <i class="far fa-calendar-alt text-stone-400 text-xs"></i>
-                            <input type="date" v-model="trip.startDate" @input="updateTripInList(trip)" class="w-24">
+                            <input type="date" v-model="trip.startDate" @click.stop @change="updateTripInList(trip)" class="w-24">
                             <span class="text-stone-300">-</span>
-                            <input type="date" v-model="trip.endDate" @input="updateTripInList(trip)" class="w-24">
+                            <input type="date" v-model="trip.endDate" @click.stop @change="updateTripInList(trip)" class="w-24">
                         </div>
+                        <div @click="viewTrip(trip)" class="absolute inset-0 cursor-pointer" style="z-index: 1;"></div>
                     </div>
-                    <div class="absolute top-4 right-4 flex gap-3">
+                    <div class="absolute top-4 right-4 flex gap-3" style="z-index: 2;">
                         <button @click.stop="duplicateTrip(trip)" class="text-stone-300 hover:theme-yellow"><i class="far fa-copy"></i></button>
                         <button @click.stop="deleteTrip(index)" class="text-stone-200 hover:text-red-400"><i class="far fa-trash-alt"></i></button>
                     </div>
