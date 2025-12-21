@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tripy</title>
+    <title>Tripy 🐱</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
@@ -11,146 +11,159 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap');
-        body { font-family: 'Noto Sans TC', sans-serif; background-color: #fcfaf2; color: #4a4a4a; }
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #fcfaf2; color: #5a5a5a; }
         .theme-yellow { color: #FAAC68; }
         .bg-theme-yellow { background-color: #FAAC68; }
+        .glass-card { background: rgba(255, 255, 255, 0.9); border-radius: 20px; border: 1px solid rgba(250, 172, 104, 0.2); }
         .tab-active { border-bottom: 3px solid #FAAC68; color: #FAAC68; font-weight: bold; }
-        .drag-handle { cursor: grab; }
-        .scroll-hide::-webkit-scrollbar { display: none; }
-        input[type="date"] { border: none; background: transparent; outline: none; }
+        .drag-handle { cursor: grab; color: #d1d5db; }
+        input[type="date"] { border: none; background: transparent; outline: none; font-size: 0.75rem; color: #9ca3af; }
     </style>
 </head>
 <body>
-    <div id="app" class="max-w-md mx-auto min-h-screen relative shadow-2xl bg-white/50 overflow-x-hidden">
+    <div id="app" class="max-w-md mx-auto min-h-screen relative shadow-2xl bg-white/50">
         
         <div v-if="loading" class="fixed inset-0 z-[60] flex flex-col items-center justify-center bg-stone-50/90">
             <i class="fas fa-cat fa-bounce theme-yellow text-5xl mb-4"></i>
-            <p class="text-stone-500 font-medium tracking-widest">正在同步資料...🐾</p>
+            <p class="text-stone-500 font-medium">正在處理中...🐾</p>
         </div>
 
-        <div v-if="activeInfoKey" class="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm">
-            <div class="bg-white w-full max-w-md rounded-t-[32px] p-6 shadow-2xl transition-transform">
+        <div v-if="showInfoModal" class="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm">
+            <div class="bg-white w-full max-w-md rounded-t-[32px] p-6 shadow-2xl">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="font-bold text-lg theme-yellow">{{ activeInfoKey }} 備註</h3>
-                    <button @click="activeInfoKey = null" class="text-stone-300"><i class="fas fa-times-circle text-2xl"></i></button>
+                    <button @click="showInfoModal = false" class="text-stone-300"><i class="fas fa-times-circle text-2xl"></i></button>
                 </div>
-                <textarea v-model="currentTrip.baseInfo[activeInfoKey]" class="w-full h-40 p-4 bg-stone-50 rounded-2xl outline-none text-sm leading-relaxed" placeholder="在這裡輸入詳細內容..."></textarea>
-                <button @click="activeInfoKey = null" class="w-full py-4 mt-4 bg-theme-yellow text-white rounded-2xl font-bold">完成儲存</button>
+                <textarea v-model="currentTrip.baseInfo[activeInfoKey]" class="w-full h-40 p-4 bg-stone-50 rounded-2xl outline-none text-sm" placeholder="輸入詳細資訊..."></textarea>
+                <button @click="showInfoModal = false" class="w-full py-4 mt-4 bg-theme-yellow text-white rounded-2xl font-bold">儲存</button>
             </div>
         </div>
 
         <div v-if="!currentTrip" class="p-6">
-            <header class="flex justify-between items-center mb-8 mt-4">
+            <header class="flex justify-between items-center mb-10 mt-4">
                 <div class="flex items-center gap-3">
-                    <svg width="40" height="40" viewBox="0 0 100 100" fill="none">
+                    <svg width="50" height="50" viewBox="0 0 100 100" fill="none">
                         <rect x="20" y="35" width="60" height="45" rx="8" fill="#FAAC68"/>
                         <path d="M40 35V25C40 22.2386 42.2386 20 45 20H55C57.7614 20 60 22.2386 60 25V35" stroke="#FAAC68" stroke-width="6"/>
                         <circle cx="40" cy="50" r="4" fill="white"/><circle cx="60" cy="50" r="4" fill="white"/>
+                        <path d="M45 60C45 60 50 65 55 60" stroke="white" stroke-width="3" stroke-linecap="round"/>
                     </svg>
-                    <h1 class="text-2xl font-black theme-yellow">Tripy</h1>
+                    <h1 class="text-3xl font-black theme-yellow tracking-tighter">Tripy</h1>
                 </div>
-                <button @click="addNewTrip" class="bg-theme-yellow text-white w-10 h-10 rounded-full shadow-lg flex items-center justify-center"><i class="fas fa-plus"></i></button>
+                <button @click="addNewTrip" class="bg-theme-yellow text-white w-12 h-12 rounded-full shadow-lg flex items-center justify-center">
+                    <i class="fas fa-plus"></i>
+                </button>
             </header>
 
             <div class="space-y-4">
-                <div v-for="(trip, index) in trips" :key="trip.firebaseId" class="bg-white p-5 rounded-3xl shadow-sm relative border border-stone-50">
+                <div v-for="(trip, index) in trips" :key="trip.firebaseId" class="glass-card p-5 relative group">
                     <div @click="viewTrip(trip)" class="cursor-pointer">
-                        <input v-model="trip.title" @click.stop class="block w-full text-lg font-bold text-stone-700 outline-none bg-transparent">
-                        <div class="flex items-center gap-2 mt-2 text-stone-400 text-xs italic">
-                            <i class="far fa-calendar-alt"></i>
-                            <span>{{ trip.startDate }} ~ {{ trip.endDate }}</span>
+                        <input v-model="trip.title" @click.stop class="text-lg font-bold text-stone-700 bg-transparent outline-none w-full">
+                        <div class="flex items-center gap-1 mt-2">
+                            <i class="far fa-calendar-alt text-stone-400 text-xs"></i>
+                            <input type="date" v-model="trip.startDate" @click.stop class="w-24">
+                            <span class="text-stone-300">-</span>
+                            <input type="date" v-model="trip.endDate" @click.stop class="w-24">
                         </div>
                     </div>
-                    <div class="absolute top-5 right-5 flex gap-3 text-stone-200">
-                        <button @click.stop="duplicateTrip(trip)" class="hover:theme-yellow"><i class="far fa-copy"></i></button>
-                        <button @click.stop="deleteTrip(index)" class="hover:text-red-400"><i class="far fa-trash-alt"></i></button>
+                    <div class="absolute top-4 right-4 flex gap-3">
+                        <button @click.stop="duplicateTrip(trip)" class="text-stone-300 hover:theme-yellow"><i class="far fa-copy"></i></button>
+                        <button @click.stop="deleteTrip(index)" class="text-stone-200 hover:text-red-400"><i class="far fa-trash-alt"></i></button>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div v-else class="min-h-screen flex flex-col">
-            <nav class="bg-white p-4 flex items-center border-b border-stone-50">
-                <button @click="saveAndExit" class="text-stone-400 w-10 text-left"><i class="fas fa-arrow-left"></i></button>
-                <input v-model="currentTrip.title" class="flex-1 text-center font-bold text-stone-600 outline-none bg-transparent">
-                <div class="w-10"></div>
+        <div v-else class="min-h-screen bg-stone-50 flex flex-col">
+            <nav class="bg-white p-4 flex items-center sticky top-0 z-10 border-b border-stone-100">
+                <button @click="saveAndExit" class="text-stone-400 p-2"><i class="fas fa-chevron-left"></i></button>
+                <input v-model="currentTrip.title" class="flex-1 text-center font-bold text-stone-600 outline-none bg-transparent px-4">
+                <div class="w-8"></div>
             </nav>
 
-            <div class="flex justify-around bg-white text-xs border-b">
+            <div class="flex justify-around bg-white text-xs tracking-widest border-b">
                 <button v-for="tab in tabs" :key="tab.id" @click="activeTab = tab.id" 
                     :class="['py-4 w-full', activeTab === tab.id ? 'tab-active' : 'text-stone-300']">
                     {{ tab.name }}
                 </button>
             </div>
 
-            <div class="flex-1 p-5 overflow-y-auto scroll-hide pb-20">
-                <div v-if="activeTab === 'checklist' || activeTab === 'expense'" class="space-y-6">
-                    <section v-for="type in activeTab === 'checklist' ? ['shopping', 'packing'] : ['expenses']" :key="type" class="bg-white p-5 rounded-3xl shadow-sm">
-                        <h4 class="font-bold mb-4 text-stone-700">
-                            {{ type === 'shopping' ? '🛒 購物' : type === 'packing' ? '🎒 必帶' : '💰 支出明細 (NT$ ' + totalExpense + ')' }}
-                        </h4>
+            <div class="flex-1 p-5 overflow-y-auto safe-area-bottom">
+                <div v-if="activeTab === 'checklist'" class="space-y-6">
+                    <section v-for="type in ['shopping', 'packing']" :key="type" class="bg-white p-5 rounded-2xl shadow-sm">
+                        <h4 class="font-bold mb-4 text-stone-700">{{ type === 'shopping' ? '🛒 購物清單' : '🎒 必帶物品' }}</h4>
                         <draggable v-model="currentTrip[type]" item-key="id" handle=".drag-handle" class="space-y-3">
                             <template #item="{element, index}">
                                 <div class="flex items-center gap-2 group">
-                                    <i class="fas fa-grip-vertical drag-handle text-stone-200 text-xs"></i>
-                                    <template v-if="type !== 'expenses'">
-                                        <input type="checkbox" v-model="element.done" class="rounded text-amber-500">
-                                        <input v-model="element.text" placeholder="輸入項目..." class="flex-1 text-sm outline-none">
-                                    </template>
-                                    <template v-else>
-                                        <input v-model="element.name" placeholder="項目" class="flex-1 text-sm outline-none">
-                                        <span class="text-stone-300 text-xs">$</span>
-                                        <input v-model.number="element.amount" type="number" placeholder="0" class="w-16 text-right text-sm font-bold theme-yellow outline-none">
-                                    </template>
-                                    <button @click="removeItem(type, index)" class="text-stone-200 hover:text-red-400"><i class="fas fa-times text-xs"></i></button>
+                                    <i class="fas fa-grip-lines drag-handle text-xs"></i>
+                                    <input type="checkbox" v-model="element.done" class="rounded text-amber-500">
+                                    <input v-model="element.text" class="flex-1 text-sm bg-transparent outline-none">
+                                    <button @click="removeItem(type, index)" class="text-stone-200 hover:text-red-400"><i class="fas fa-times"></i></button>
                                 </div>
                             </template>
                         </draggable>
                         <button @click="addItem(type)" class="mt-4 theme-yellow text-xs font-bold">+ 新增</button>
                     </section>
-                    <section v-if="activeTab === 'checklist'" class="bg-white p-5 rounded-3xl shadow-sm">
-                        <h4 class="font-bold mb-2 text-stone-700 text-sm">📝 備註</h4>
-                        <textarea v-model="currentTrip.note" class="w-full text-xs text-stone-500 bg-stone-50 p-3 rounded-xl outline-none border-none" rows="3"></textarea>
-                    </section>
+                </div>
+
+                <div v-if="activeTab === 'expense'" class="space-y-4">
+                    <div class="bg-stone-800 p-6 rounded-3xl text-white shadow-lg">
+                        <p class="text-stone-400 text-xs">Total Expenses</p>
+                        <p class="text-3xl font-light mt-1">NT$ {{ totalExpense }}</p>
+                    </div>
+                    <div class="bg-white rounded-2xl p-2 shadow-sm">
+                        <draggable v-model="currentTrip.expenses" item-key="id" handle=".drag-handle">
+                            <template #item="{element, index}">
+                                <div class="flex items-center gap-3 p-3 border-b border-stone-50 last:border-0 group">
+                                    <i class="fas fa-grip-lines drag-handle text-xs"></i>
+                                    <input v-model="element.name" placeholder="項目" class="flex-1 text-sm outline-none">
+                                    <span class="text-stone-300 text-sm">$</span>
+                                    <input v-model.number="element.amount" type="number" placeholder="金額" class="w-20 text-right text-sm font-bold theme-yellow outline-none">
+                                    <button @click="removeItem('expenses', index)" class="text-stone-200 hover:text-red-400 ml-2"><i class="fas fa-trash-alt text-xs"></i></button>
+                                </div>
+                            </template>
+                        </draggable>
+                        <button @click="addItem('expenses')" class="w-full py-4 theme-yellow text-xs font-bold">+ 記一筆</button>
+                    </div>
                 </div>
 
                 <div v-if="activeTab === 'itinerary'" class="space-y-6">
                     <div class="flex gap-3">
                         <button v-for="info in ['交通', '住宿', '其他']" :key="info" 
-                            @click="activeInfoKey = info"
-                            class="flex-1 py-3 bg-white rounded-2xl shadow-sm text-xs font-bold text-stone-500 hover:bg-stone-50 border border-stone-100">
+                            @click="openInfoModal(info)"
+                            class="flex-1 py-3 bg-white rounded-2xl shadow-sm text-xs font-bold text-stone-500 border border-stone-100">
                             <i :class="info === '交通' ? 'fa-plane' : info === '住宿' ? 'fa-hotel' : 'fa-ellipsis-h'" class="fas mb-1 block text-lg theme-yellow"></i>
                             {{ info }}
                         </button>
                     </div>
 
-                    <div class="space-y-4">
-                        <div v-for="(day, dIdx) in currentTrip.schedule" :key="dIdx" class="bg-white rounded-[32px] p-5 shadow-sm border border-stone-50 relative">
+                    <div class="space-y-6">
+                        <div v-for="(day, dIdx) in currentTrip.schedule" :key="dIdx" class="bg-white rounded-3xl p-5 shadow-sm border border-stone-50 relative">
                             <div class="flex justify-between items-center mb-4">
                                 <span class="bg-theme-yellow text-white text-[10px] px-3 py-1 rounded-full font-bold">DAY {{ dIdx + 1 }}</span>
-                                <input type="date" v-model="day.date" class="text-xs text-stone-400 font-medium">
+                                <input type="date" v-model="day.date">
                             </div>
                             
                             <draggable v-model="day.items" item-key="id" handle=".drag-handle" class="space-y-3">
                                 <template #item="{element, iIdx}">
-                                    <div class="flex items-start gap-3 group bg-stone-50/50 p-3 rounded-2xl relative">
-                                        <i class="fas fa-grip-vertical drag-handle mt-1 text-stone-200 text-[10px]"></i>
+                                    <div class="flex items-start gap-3 bg-stone-50/50 p-3 rounded-2xl group">
+                                        <i class="fas fa-grip-vertical drag-handle mt-1 text-[10px]"></i>
                                         <div class="flex-1">
                                             <input v-model="element.time" placeholder="時間" class="block w-full text-[10px] font-bold theme-yellow bg-transparent outline-none">
                                             <input v-model="element.desc" placeholder="行程景點..." class="block w-full text-sm font-medium text-stone-600 bg-transparent outline-none mt-1">
                                         </div>
-                                        <button @click="removeDayItem(dIdx, iIdx)" class="text-stone-200 hover:text-red-400"><i class="fas fa-trash-alt text-[10px]"></i></button>
+                                        <button @click="day.items.splice(iIdx, 1)" class="text-stone-200 hover:text-red-400"><i class="fas fa-trash-alt text-[10px]"></i></button>
                                     </div>
                                 </template>
                             </draggable>
 
                             <div class="flex gap-2 mt-4">
-                                <button @click="addDayItem(dIdx)" class="flex-1 py-2 bg-stone-50 rounded-xl text-[10px] font-bold text-stone-400">+ 新增行程區塊</button>
-                                <button @click="removeItem('schedule', dIdx)" class="px-3 py-2 text-stone-300 hover:text-red-400"><i class="fas fa-trash-alt text-xs"></i></button>
+                                <button @click="addDayItem(dIdx)" class="flex-1 py-2 bg-stone-50 rounded-xl text-[10px] font-bold text-stone-400">+ 新增行程</button>
+                                <button @click="removeItem('schedule', dIdx)" class="text-stone-200 hover:text-red-400 px-2"><i class="fas fa-trash-alt text-xs"></i></button>
                             </div>
                         </div>
                     </div>
-                    <button @click="addItem('schedule')" class="w-full py-4 border-2 border-dashed border-stone-200 rounded-3xl text-stone-300 font-bold text-sm hover:border-theme-yellow hover:text-theme-yellow">+ 增加天數</button>
+                    <button @click="addItem('schedule')" class="w-full py-4 border-2 border-dashed border-stone-200 rounded-3xl text-stone-300 font-bold text-sm">+ 增加天數</button>
                 </div>
             </div>
         </div>
@@ -180,13 +193,21 @@
                 const currentTrip = ref(null);
                 const loading = ref(true);
                 const activeTab = ref('checklist');
-                const activeInfoKey = ref(null); // 用於控制交通/住宿/其他彈窗
+                const showInfoModal = ref(false);
+                const activeInfoKey = ref('');
                 const tabs = [{ id: 'checklist', name: '準備' }, { id: 'expense', name: '記帳' }, { id: 'itinerary', name: '行程' }];
 
                 const fetchTrips = async () => {
                     loading.value = true;
                     const querySnapshot = await getDocs(collection(db, "trips"));
-                    trips.value = querySnapshot.docs.map(doc => ({ firebaseId: doc.id, ...doc.data() }));
+                    trips.value = querySnapshot.docs.map(doc => {
+                        const data = doc.data();
+                        // 確保舊資料格式相容
+                        if (!data.schedule[0].items) {
+                            data.schedule = data.schedule.map(d => ({ date: d.date, items: [] }));
+                        }
+                        return { firebaseId: doc.id, ...data };
+                    });
                     loading.value = false;
                 };
 
@@ -194,32 +215,46 @@
                     const title = prompt("標題：", "新的冒險");
                     if (!title) return;
                     const newTrip = {
-                        title, startDate: '2025-12-11', endDate: '2025-12-15',
+                        title, startDate: '2025-01-01', endDate: '2025-01-05',
                         shopping: [], packing: [], expenses: [],
                         baseInfo: { '交通': '', '住宿': '', '其他': '' },
-                        schedule: [{ date: '2025-12-11', items: [{time: '12:00', desc: '新行程'}] }],
+                        schedule: [{ date: '2025-01-01', items: [] }],
                         note: ''
                     };
                     const docRef = await addDoc(collection(db, "trips"), newTrip);
                     trips.value.push({ firebaseId: docRef.id, ...newTrip });
                 };
 
+                const openInfoModal = (key) => {
+                    activeInfoKey.value = key;
+                    showInfoModal.value = true;
+                };
+
                 const addItem = (type) => {
-                    if (type === 'shopping' || type === 'packing') currentTrip.value[type].push({ id: Date.now(), text: '', done: false });
-                    else if (type === 'expenses') currentTrip.value.expenses.push({ id: Date.now(), name: '', amount: null }); // 金額預設為 null
+                    if (type === 'shopping' || type === 'packing') currentTrip.value[type].push({ id: Date.now(), text: '新項目', done: false });
+                    else if (type === 'expenses') currentTrip.value.expenses.push({ id: Date.now(), name: '', amount: null });
                     else if (type === 'schedule') currentTrip.value.schedule.push({ date: '', items: [] });
                 };
 
-                const addDayItem = (dayIdx) => {
-                    currentTrip.value.schedule[dayIdx].items.push({ id: Date.now(), time: '', desc: '' });
-                };
-
-                const removeDayItem = (dayIdx, itemIdx) => {
-                    currentTrip.value.schedule[dayIdx].items.splice(itemIdx, 1);
+                const addDayItem = (idx) => {
+                    currentTrip.value.schedule[idx].items.push({ id: Date.now(), time: '', desc: '' });
                 };
 
                 const removeItem = (type, index) => {
                     currentTrip.value[type].splice(index, 1);
+                };
+
+                const saveAndExit = async () => {
+                    if (currentTrip.value?.firebaseId) {
+                        loading.value = true;
+                        const tripRef = doc(db, "trips", currentTrip.value.firebaseId);
+                        const rawData = JSON.parse(JSON.stringify(currentTrip.value));
+                        delete rawData.firebaseId;
+                        await updateDoc(tripRef, rawData);
+                    }
+                    currentTrip.value = null;
+                    loading.value = false;
+                    fetchTrips();
                 };
 
                 const deleteTrip = async (index) => {
@@ -228,20 +263,11 @@
                     trips.value.splice(index, 1);
                 };
 
-                const saveAndExit = async () => {
-                    if (currentTrip.value?.firebaseId) {
-                        loading.value = true;
-                        const { firebaseId, ...rawData } = currentTrip.value;
-                        await updateDoc(doc(db, "trips", firebaseId), rawData);
-                    }
-                    currentTrip.value = null;
-                    loading.value = false;
-                };
-
                 const duplicateTrip = async (trip) => {
                     loading.value = true;
-                    const { firebaseId, ...cloned } = JSON.parse(JSON.stringify(trip));
-                    cloned.title += " (複製品)";
+                    const cloned = JSON.parse(JSON.stringify(trip));
+                    delete cloned.firebaseId;
+                    cloned.title += " (複製)";
                     const docRef = await addDoc(collection(db, "trips"), cloned);
                     trips.value.push({ firebaseId: docRef.id, ...cloned });
                     loading.value = false;
@@ -253,7 +279,7 @@
 
                 onMounted(fetchTrips);
 
-                return { trips, currentTrip, activeTab, tabs, totalExpense, activeInfoKey, addNewTrip, deleteTrip, viewTrip: (t) => currentTrip.value = t, saveAndExit, addItem, removeItem, addDayItem, removeDayItem, duplicateTrip, loading };
+                return { trips, currentTrip, activeTab, tabs, totalExpense, loading, showInfoModal, activeInfoKey, addNewTrip, deleteTrip, viewTrip: (t) => currentTrip.value = t, saveAndExit, addItem, removeItem, addDayItem, openInfoModal, duplicateTrip };
             }
         }).mount('#app');
     </script>
