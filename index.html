@@ -293,25 +293,35 @@
                 };
 
                 const addItem = (type) => {
-                    if (!currentTrip.value) return;
+                    console.log('addItem called:', type, currentTrip.value);
+                    if (!currentTrip.value) {
+                        console.error('currentTrip is null');
+                        return;
+                    }
                     
                     const id = Date.now().toString();
                     
                     if (type === 'shopping' || type === 'packing') {
-                        if (!currentTrip.value[type]) {
+                        if (!Array.isArray(currentTrip.value[type])) {
                             currentTrip.value[type] = [];
                         }
-                        currentTrip.value[type].push({ id, text: '', done: false });
+                        const newItem = { id, text: '', done: false };
+                        currentTrip.value[type] = [...currentTrip.value[type], newItem];
+                        console.log('Added to', type, ':', currentTrip.value[type]);
                     } else if (type === 'expenses') {
-                        if (!currentTrip.value.expenses) {
+                        if (!Array.isArray(currentTrip.value.expenses)) {
                             currentTrip.value.expenses = [];
                         }
-                        currentTrip.value.expenses.push({ id, name: '', amount: 0 });
+                        const newItem = { id, name: '', amount: 0 };
+                        currentTrip.value.expenses = [...currentTrip.value.expenses, newItem];
+                        console.log('Added expense:', currentTrip.value.expenses);
                     } else if (type === 'schedule') {
-                        if (!currentTrip.value.schedule) {
+                        if (!Array.isArray(currentTrip.value.schedule)) {
                             currentTrip.value.schedule = [];
                         }
-                        currentTrip.value.schedule.push({ id, date: '', items: [] });
+                        const newItem = { id, date: '', items: [] };
+                        currentTrip.value.schedule = [...currentTrip.value.schedule, newItem];
+                        console.log('Added schedule:', currentTrip.value.schedule);
                     }
                 };
 
