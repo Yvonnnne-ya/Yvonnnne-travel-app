@@ -24,17 +24,10 @@
             font-size: 0.75rem; 
             color: #9ca3af; 
             cursor: pointer;
-            position: relative;
-            z-index: 10;
+            min-width: 100px;
         }
         input[type="date"]::-webkit-calendar-picker-indicator { 
             cursor: pointer; 
-            position: absolute;
-            left: 0;
-            right: 0;
-            width: 100%;
-            height: 100%;
-            opacity: 0;
         }
         
         /* 行程卡片左滑樣式 */
@@ -117,7 +110,7 @@
                 <div v-if="activeTab === 'checklist'" class="space-y-6">
                     <section v-for="type in ['shopping', 'packing']" :key="type" class="bg-white p-5 rounded-2xl shadow-sm border border-stone-100">
                         <h4 class="font-bold mb-4 text-stone-700">{{ type === 'shopping' ? '🛒 購物清單' : '🎒 必帶物品' }}</h4>
-                        <draggable v-model="currentTrip[type]" item-key="id" handle=".drag-handle" class="space-y-3">
+                        <draggable v-if="currentTrip[type] && currentTrip[type].length > 0" v-model="currentTrip[type]" item-key="id" handle=".drag-handle" class="space-y-3">
                             <template #item="{element, index}">
                                 <div class="flex items-center gap-2 group">
                                     <i class="fas fa-grip-lines drag-handle text-xs"></i>
@@ -127,7 +120,8 @@
                                 </div>
                             </template>
                         </draggable>
-                        <button @click="addItem(type)" class="mt-4 theme-yellow text-xs font-bold bg-amber-50 px-3 py-1.5 rounded-lg">+ 新增項目</button>
+                        <div v-else class="text-stone-300 text-xs text-center py-4">尚無項目</div>
+                        <button @click="addItem(type)" class="mt-4 theme-yellow text-xs font-bold bg-amber-50 px-3 py-1.5 rounded-lg hover:bg-amber-100 transition-colors">+ 新增項目</button>
                     </section>
 
                     <section class="bg-white p-5 rounded-2xl shadow-sm border border-stone-100">
@@ -142,7 +136,7 @@
                         <p class="text-3xl font-light mt-1">NT$ {{ totalExpense }}</p>
                     </div>
                     <div class="bg-white rounded-2xl p-2 shadow-sm border border-stone-100">
-                        <draggable v-model="currentTrip.expenses" item-key="id" handle=".drag-handle" class="space-y-1">
+                        <draggable v-if="currentTrip.expenses && currentTrip.expenses.length > 0" v-model="currentTrip.expenses" item-key="id" handle=".drag-handle" class="space-y-1">
                             <template #item="{element, index}">
                                 <div class="flex items-center gap-2 p-3 border-b border-stone-50 last:border-0 group">
                                     <i class="fas fa-grip-lines drag-handle text-xs"></i>
@@ -155,6 +149,7 @@
                                 </div>
                             </template>
                         </draggable>
+                        <div v-else class="text-stone-300 text-xs text-center py-8">尚無支出記錄</div>
                         <button @click="addItem('expenses')" class="w-full py-4 theme-yellow text-xs font-bold hover:bg-amber-50 transition-colors">+ 記一筆新的支出</button>
                     </div>
                 </div>
@@ -173,10 +168,10 @@
                         <div v-for="(day, dIdx) in currentTrip.schedule" :key="dIdx" class="itinerary-card bg-white rounded-[32px] p-6 shadow-md border border-stone-50 relative h-fit min-h-[400px]">
                             <div class="flex justify-between items-center mb-6">
                                 <span class="bg-theme-yellow text-white text-[11px] px-4 py-1 rounded-full font-bold shadow-sm">DAY {{ dIdx + 1 }}</span>
-                                <input type="date" v-model="day.date" class="font-bold">
+                                <input type="date" v-model="day.date" class="font-bold cursor-pointer">
                             </div>
                             
-                            <draggable v-model="day.items" item-key="id" handle=".drag-handle" class="space-y-4 mb-6">
+                            <draggable v-if="day.items && day.items.length > 0" v-model="day.items" item-key="id" handle=".drag-handle" class="space-y-4 mb-6">
                                 <template #item="{element, iIdx}">
                                     <div class="flex items-start gap-3 bg-stone-50 p-4 rounded-2xl group relative border border-stone-100">
                                         <i class="fas fa-grip-vertical drag-handle mt-1 text-[10px]"></i>
@@ -187,9 +182,10 @@
                                     </div>
                                 </template>
                             </draggable>
+                            <div v-else class="text-stone-300 text-xs text-center py-8 mb-6">尚無行程</div>
 
                             <div class="flex flex-col gap-2">
-                                <button @click="addDayItem(dIdx)" class="w-full py-3 bg-amber-50 text-amber-600 rounded-xl text-xs font-bold">+ 新增行程點</button>
+                                <button @click="addDayItem(dIdx)" class="w-full py-3 bg-amber-50 text-amber-600 rounded-xl text-xs font-bold hover:bg-amber-100 transition-colors">+ 新增行程點</button>
                                 <button @click="removeItem('schedule', dIdx)" class="w-full py-2 text-stone-300 text-[10px] hover:text-red-300">刪除這一天</button>
                             </div>
                         </div>
@@ -272,33 +268,46 @@
                 };
 
                 const addItem = (type) => {
-                    if (!currentTrip.value) return;
+                    console.log('addItem called with type:', type);
+                    if (!currentTrip.value) {
+                        console.error('currentTrip is null');
+                        return;
+                    }
                     
                     const id = Date.now().toString();
+                    
                     if (type === 'shopping' || type === 'packing') {
-                        if (!currentTrip.value[type]) {
+                        if (!Array.isArray(currentTrip.value[type])) {
                             currentTrip.value[type] = [];
                         }
                         currentTrip.value[type].push({ id, text: '', done: false });
+                        console.log('Added to', type, currentTrip.value[type]);
                     } else if (type === 'expenses') {
-                        if (!currentTrip.value.expenses) {
+                        if (!Array.isArray(currentTrip.value.expenses)) {
                             currentTrip.value.expenses = [];
                         }
                         currentTrip.value.expenses.push({ id, name: '', amount: 0 });
+                        console.log('Added expense', currentTrip.value.expenses);
                     } else if (type === 'schedule') {
-                        if (!currentTrip.value.schedule) {
+                        if (!Array.isArray(currentTrip.value.schedule)) {
                             currentTrip.value.schedule = [];
                         }
                         currentTrip.value.schedule.push({ id, date: '', items: [] });
+                        console.log('Added schedule day', currentTrip.value.schedule);
                     }
                 };
 
                 const addDayItem = (idx) => {
-                    if (!currentTrip.value?.schedule?.[idx]) return;
-                    if (!currentTrip.value.schedule[idx].items) {
+                    console.log('addDayItem called with idx:', idx);
+                    if (!currentTrip.value?.schedule?.[idx]) {
+                        console.error('Invalid schedule index');
+                        return;
+                    }
+                    if (!Array.isArray(currentTrip.value.schedule[idx].items)) {
                         currentTrip.value.schedule[idx].items = [];
                     }
                     currentTrip.value.schedule[idx].items.push({ id: Date.now().toString(), desc: '' });
+                    console.log('Added day item', currentTrip.value.schedule[idx].items);
                 };
 
                 const removeItem = (type, index) => {
@@ -338,14 +347,20 @@
                 };
 
                 const viewTrip = (trip) => {
+                    console.log('viewTrip called with:', trip);
                     const cloned = JSON.parse(JSON.stringify(trip));
-                    if (!cloned.shopping) cloned.shopping = [];
-                    if (!cloned.packing) cloned.packing = [];
-                    if (!cloned.expenses) cloned.expenses = [];
-                    if (!cloned.schedule || cloned.schedule.length === 0) cloned.schedule = [{ date: '', items: [] }];
+                    
+                    if (!Array.isArray(cloned.shopping)) cloned.shopping = [];
+                    if (!Array.isArray(cloned.packing)) cloned.packing = [];
+                    if (!Array.isArray(cloned.expenses)) cloned.expenses = [];
+                    if (!Array.isArray(cloned.schedule) || cloned.schedule.length === 0) {
+                        cloned.schedule = [{ date: '', items: [] }];
+                    }
                     if (!cloned.baseInfo) cloned.baseInfo = { '交通': '', '住宿': '', '其他': '' };
                     if (!cloned.note) cloned.note = '';
+                    
                     currentTrip.value = cloned;
+                    console.log('currentTrip set to:', currentTrip.value);
                 };
 
                 const totalExpense = computed(() => {
