@@ -42,21 +42,16 @@
                     <h2 class="text-xl font-bold text-stone-800">開始規劃旅程</h2>
                     <p class="text-xs text-stone-500 mt-2">{{ isSignUp ? '建立帳號以同步你的行程' : '登入後繼續編輯行程' }}</p>
                 </div>
-                
                 <div class="space-y-4">
                     <input v-model="authEmail" type="email" placeholder="Email" class="w-full p-3 rounded-xl border border-stone-100 outline-none focus:ring-2 focus:ring-orange-200 text-sm">
                     <input v-model="authPassword" type="password" placeholder="密碼 (至少6位)" class="w-full p-3 rounded-xl border border-stone-100 outline-none focus:ring-2 focus:ring-orange-200 text-sm">
                 </div>
-
                 <button @click="handleAuth" class="w-full py-4 bg-orange-custom text-white rounded-2xl font-bold shadow-lg shadow-orange-200 active:scale-95 transition-transform">
                     {{ isSignUp ? '立即註冊' : '登入 App' }}
                 </button>
-
                 <p class="text-center text-xs text-stone-400">
                     {{ isSignUp ? '已經有帳號了？' : '還沒有帳號嗎？' }}
-                    <span @click="isSignUp = !isSignUp" class="text-orange-custom font-bold cursor-pointer underline ml-1">
-                        {{ isSignUp ? '按此登入' : '按此註冊' }}
-                    </span>
+                    <span @click="isSignUp = !isSignUp" class="text-orange-custom font-bold cursor-pointer underline ml-1">{{ isSignUp ? '按此登入' : '按此註冊' }}</span>
                 </p>
             </div>
         </div>
@@ -67,12 +62,12 @@
         </div>
 
         <div v-if="!currentTrip && currentUser" class="p-6">
-            <header class="flex justify-between items-center mb-10 mt-4">
-                <div class="flex flex-col">
+            <header class="flex justify-between items-center mb-10 mt-4 w-full">
+                <div class="flex flex-col flex-1">
                     <img src="https://res.cloudinary.com/dr4mqazu5/image/upload/v1766806236/Frame_2_rh3ymb.png" alt="Tripy Logo" class="h-12 object-contain w-fit">
                     <button @click="logout" class="text-[10px] text-stone-300 mt-1 text-left">登出 {{ currentUser.email }}</button>
                 </div>
-                <button @click="addNewTrip" class="bg-theme-yellow text-white w-12 h-12 rounded-full shadow-lg flex items-center justify-center">
+                <button @click="addNewTrip" class="bg-theme-yellow text-white w-12 h-12 rounded-full shadow-lg flex items-center justify-center shrink-0 ml-4">
                     <i class="fas fa-plus"></i>
                 </button>
             </header>
@@ -81,7 +76,6 @@
                 <div v-for="(trip, index) in trips" :key="trip.firebaseId" 
                      @click="viewTrip(trip)"
                      class="glass-card p-6 relative cursor-pointer hover:border-orange-200 border border-transparent">
-                    
                     <div class="pr-16">
                         <div class="text-lg font-bold text-stone-700 w-full">{{ trip.title }}</div>
                         <div class="flex items-center gap-2 mt-2 text-stone-400 text-xs">
@@ -89,7 +83,6 @@
                             <span>{{ trip.dateRange || '尚未設定日期' }}</span>
                         </div>
                     </div>
-
                     <div class="absolute top-6 right-6 flex gap-4" @click.stop>
                         <button @click="duplicateTrip(trip)" class="text-stone-300 hover:text-orange-custom"><i class="far fa-copy"></i></button>
                         <button @click="deleteTrip(index)" class="text-stone-300 hover:text-red-400"><i class="far fa-trash-alt"></i></button>
@@ -137,7 +130,7 @@
                     </section>
                     <section class="glass-card p-5">
                         <h4 class="font-bold mb-3 text-stone-700 text-sm">🍒 住宿資訊</h4>
-                        <textarea v-model="currentTrip.hotelNote"  class="w-full h-24 p-3 text-sm bg-stone-50 rounded-xl outline-none resize-none text-stone-600"></textarea>
+                        <textarea v-model="currentTrip.hotelNote" class="w-full h-24 p-3 text-sm bg-stone-50 rounded-xl outline-none resize-none text-stone-600"></textarea>
                     </section>
                     <section class="glass-card p-5">
                         <h4 class="font-bold mb-3 text-stone-700 text-sm">📝 其他備註</h4>
@@ -182,7 +175,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div v-if="activeTab === 'expense'" class="space-y-4">
                     <div class="bg-theme-yellow p-6 rounded-[24px] text-white">
                         <p class="text-white/70 text-xs">預算花費</p>
@@ -235,7 +228,6 @@
                 const activeTab = ref('itinerary');
                 const tabs = [{ id: 'checklist', name: '準備' }, { id: 'itinerary', name: '行程' }, { id: 'expense', name: '記帳' }];
 
-                // 監聽登入狀態
                 onAuthStateChanged(auth, (user) => {
                     currentUser.value = user;
                     if (user) {
@@ -259,21 +251,15 @@
                         } else {
                             await signInWithEmailAndPassword(auth, authEmail.value, authPassword.value);
                         }
-                    } catch (e) {
-                        alert("驗證錯誤: " + e.message);
-                    }
+                    } catch (e) { alert("驗證錯誤: " + e.message); }
                     loading.value = false;
                 };
 
-                const logout = () => {
-                    signOut(auth);
-                    currentTrip.value = null;
-                };
+                const logout = () => { signOut(auth); currentTrip.value = null; };
 
                 const fetchTrips = async () => {
                     loading.value = true;
                     try {
-                        // 加上 userId 過濾條件
                         const q = query(collection(db, "trips"), where("userId", "==", currentUser.value.uid));
                         const querySnapshot = await getDocs(q);
                         trips.value = querySnapshot.docs.map(doc => ({ firebaseId: doc.id, ...doc.data() }));
@@ -286,9 +272,7 @@
                     if (!title) return;
                     const range = prompt("日期 (例: 12/11-12/14)：", "");
                     const newTrip = {
-                        title, 
-                        userId: currentUser.value.uid, // 關聯使用者
-                        dateRange: range || '', 
+                        title, userId: currentUser.value.uid, dateRange: range || '', 
                         shopping: [], packing: [], expenses: [],
                         schedule: [{ dateText: '', items: [], dayNote: '' }], 
                         note: '', flightNote: '', hotelNote: ''
@@ -308,13 +292,9 @@
                 };
 
                 const addItem = (type) => {
-                    if (type === 'schedule') {
-                        currentTrip.value.schedule.push({ dateText: '', items: [], dayNote: '' });
-                    } else if (type === 'expenses') {
-                        currentTrip.value.expenses.push({ name: '', amount: 0 });
-                    } else {
-                        currentTrip.value[type].push({ text: '', done: false });
-                    }
+                    if (type === 'schedule') { currentTrip.value.schedule.push({ dateText: '', items: [], dayNote: '' }); }
+                    else if (type === 'expenses') { currentTrip.value.expenses.push({ name: '', amount: 0 }); }
+                    else { currentTrip.value[type].push({ text: '', done: false }); }
                 };
 
                 const addDayItem = (idx) => {
@@ -323,9 +303,7 @@
                     currentTrip.value.schedule[idx].items = [...items];
                 };
 
-                const removeItem = (type, index) => {
-                    currentTrip.value[type].splice(index, 1);
-                };
+                const removeItem = (type, index) => { currentTrip.value[type].splice(index, 1); };
 
                 const viewTrip = (trip) => {
                     currentTrip.value = JSON.parse(JSON.stringify(trip));
