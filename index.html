@@ -32,7 +32,7 @@
         
         <div v-if="loading" class="fixed inset-0 z-[60] flex flex-col items-center justify-center bg-white/90">
             <i class="fas fa-cat fa-bounce text-orange-custom text-5xl mb-4"></i>
-            <p class="text-stone-400 font-medium">處理中...🐾</p>
+            <p class="text-stone-400 font-medium">正在跑向你的旅程...🐾</p>
         </div>
 
         <div v-if="!currentTrip" class="p-6">
@@ -52,7 +52,7 @@
                         <input v-model="trip.title" @click.stop @blur="updateTripInList(trip)" class="text-lg font-bold text-stone-700 w-full bg-transparent outline-none">
                         <div class="flex items-center gap-2 mt-2 text-stone-400 text-xs">
                             <i class="far fa-calendar-alt"></i>
-                            <input v-model="trip.dateRange" @click.stop @blur="updateTripInList(trip)" placeholder="填寫日期" class="bg-transparent outline-none w-full">
+                            <input v-model="trip.dateRange" @click.stop @blur="updateTripInList(trip)" placeholder="填寫日期 (例: 12/11-12/14)" class="bg-transparent outline-none w-full">
                         </div>
                     </div>
                     <div class="absolute top-6 right-6 flex gap-4">
@@ -137,4 +137,139 @@
                     <div class="glass-card p-4">
                         <div v-for="(exp, idx) in currentTrip.expenses" :key="idx" class="flex items-center gap-3 py-3 border-b border-stone-50 last:border-0">
                             <input v-model="exp.name" placeholder="項目" class="flex-1 min-w-0 text-sm outline-none bg-transparent">
-                            <div class="flex items-center gap-2
+                            <div class="flex items-center gap-2 shrink-0">
+                                <span class="text-stone-300 text-xs">NT$</span>
+                                <input v-model.number="exp.amount" type="number" class="w-16 text-right font-bold text-orange-custom outline-none bg-transparent">
+                                <button @click="removeItem('expenses', idx)" class="text-stone-200 hover:text-red-400 pl-2"><i class="fas fa-trash-alt text-xs"></i></button>
+                            </div>
+                        </div>
+                        <button @click="addItem('expenses')" class="w-full mt-2 py-3 text-orange-custom text-xs font-bold">+ 記帳</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, updateDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDNQ41J2u6V32w5OP7y49TLKXoWRRASSik",
+            authDomain: "tripy-275a7.firebaseapp.com",
+            projectId: "tripy-275a7",
+            storageBucket: "tripy-275a7.firebasestorage.app",
+            messagingSenderId: "1063817586690",
+            appId: "1:1063817586690:web:ee84458b2373cd4b20df1b"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const { createApp, ref, computed, onMounted } = Vue;
+
+        createApp({
+            components: { draggable: window.vuedraggable },
+            setup() {
+                const trips = ref([]);
+                const currentTrip = ref(null);
+                const loading = ref(true);
+                const activeTab = ref('itinerary');
+                const tabs = [{ id: 'checklist', name: '準備' }, { id: 'itinerary', name: '行程' }, { id: 'expense', name: '記帳' }];
+
+                const fetchTrips = async () => {
+                    loading.value = true;
+                    try {
+                        const querySnapshot = await getDocs(collection(db, "trips"));
+                        trips.value = querySnapshot.docs.map(doc => ({ firebaseId: doc.id, dateRange: '', ...doc.data() }));
+                    } catch (e) { console.error(e); }
+                    loading.value = false;
+                };
+
+                const updateTripInList = async (trip) => {
+                    const tripRef = doc(db, "trips", trip.firebaseId);
+                    const updateData = { ...trip };
+                    delete updateData.firebaseId;
+                    await updateDoc(tripRef, updateData);
+                };
+
+                const addNewTrip = async () => {
+                    const title = prompt("旅程標題：", "新旅程");
+                    if (!title) return;
+                    const newTrip = {
+                        title, dateRange: '', shopping: [], packing: [], expenses: [],
+                        schedule: [{ dateText: '', items: [] }], note: ''
+                    };
+                    const docRef = await addDoc(collection(db, "trips"), newTrip);
+                    trips.value.push({ firebaseId: docRef.id, ...newTrip });
+                };
+
+                const duplicateTrip = async (trip) => {
+                    loading.value = true;
+                    const cloned = JSON.parse(JSON.stringify(trip));
+                    delete cloned.firebaseId;
+                    cloned.title += " (副本)";
+                    const docRef = await addDoc(collection(db, "trips"), cloned);
+                    trips.value.push({ firebaseId: docRef.id, ...cloned });
+                    loading.value = false;
+                };
+
+                const addItem = (type) => {
+                    if (type === 'schedule') {
+                        currentTrip.value.schedule.push({ dateText: '', items: [] });
+                    } else if (type === 'expenses') {
+                        currentTrip.value.expenses.push({ id: Date.now().toString(), name: '', amount: 0 });
+                    } else {
+                        currentTrip.value[type].push({ id: Date.now().toString(), text: '', done: false });
+                    }
+                };
+
+                const addDayItem = (idx) => {
+                    // 修復：確保 items 存在且能正確 push
+                    if (!currentTrip.value.schedule[idx].items) {
+                        currentTrip.value.schedule[idx].items = [];
+                    }
+                    currentTrip.value.schedule[idx].items.push({ 
+                        id: Date.now().toString() + Math.random(), 
+                        desc: '' 
+                    });
+                };
+
+                const removeItem = (type, index) => {
+                    currentTrip.value[type].splice(index, 1);
+                };
+
+                const viewTrip = (trip) => {
+                    currentTrip.value = JSON.parse(JSON.stringify(trip));
+                };
+
+                const saveAndExit = async () => {
+                    loading.value = true;
+                    const tripRef = doc(db, "trips", currentTrip.value.firebaseId);
+                    const updateData = { ...currentTrip.value };
+                    delete updateData.firebaseId;
+                    await updateDoc(tripRef, updateData);
+                    currentTrip.value = null;
+                    await fetchTrips();
+                };
+
+                const deleteTrip = async (index) => {
+                    if (!confirm("確定要刪除這趟旅程嗎？")) return;
+                    await deleteDoc(doc(db, "trips", trips.value[index].firebaseId));
+                    trips.value.splice(index, 1);
+                };
+
+                const totalExpense = computed(() => {
+                    return currentTrip.value?.expenses?.reduce((sum, item) => sum + (Number(item.amount) || 0), 0) || 0;
+                });
+
+                onMounted(fetchTrips);
+
+                return { 
+                    trips, currentTrip, activeTab, tabs, loading, totalExpense,
+                    addNewTrip, duplicateTrip, viewTrip, saveAndExit, addItem, addDayItem, removeItem, deleteTrip, updateTripInList
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
