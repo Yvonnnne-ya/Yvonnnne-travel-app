@@ -15,7 +15,6 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
 
-
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap');
         body { font-family: 'Noto Sans TC', sans-serif; background-color: #fcfaf2; color: #5a5a5a; }
@@ -29,7 +28,6 @@
         .itinerary-container { display: flex; overflow-x: auto; gap: 20px; padding: 10px 0 30px 0; -webkit-overflow-scrolling: touch; }
         .itinerary-card { min-width: 85%; flex-shrink: 0; }
         input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-        /* 優化行程備註的 textarea */
         .item-note { font-size: 11px; line-height: 1.4; color: #94a3b8; width: 100%; background: transparent; border: none; outline: none; resize: none; overflow: hidden; }
         .item-note:focus { color: #64748b; }
     </style>
@@ -95,7 +93,7 @@
 
             <div class="flex-1 p-5 overflow-y-auto">
                 
-                <div v-if="activeTab === 'checklist'" class="space-y-4">
+                <div v-if="activeTab === 'checklist'" class="space-y-4 pb-10">
                     <section v-for="type in ['shopping', 'packing']" :key="type" class="glass-card p-5">
                         <h4 class="font-bold mb-4 text-stone-700 text-sm">{{ type === 'shopping' ? '🛒 購物清單' : '🎒 必帶物品' }}</h4>
                         <div class="space-y-3">
@@ -107,14 +105,17 @@
                             <button @click="addItem(type)" class="text-orange-custom text-xs font-bold">+ 新增項目</button>
                         </div>
                     </section>
+
                     <section class="glass-card p-5">
                         <h4 class="font-bold mb-3 text-stone-700 text-sm">🦦 班機資訊</h4>
-                        <textarea v-model="currentTrip.note" class="w-full h-32 p-3 text-sm bg-stone-50 rounded-xl outline-none resize-none text-stone-600"></textarea>
+                        <textarea v-model="currentTrip.flightNote" class="w-full h-24 p-3 text-sm bg-stone-50 rounded-xl outline-none resize-none text-stone-600"></textarea>
                     </section>
+
                     <section class="glass-card p-5">
                         <h4 class="font-bold mb-3 text-stone-700 text-sm">🍒 住宿資訊</h4>
-                        <textarea v-model="currentTrip.note" class="w-full h-32 p-3 text-sm bg-stone-50 rounded-xl outline-none resize-none text-stone-600"></textarea>
+                        <textarea v-model="currentTrip.hotelNote" class="w-full h-24 p-3 text-sm bg-stone-50 rounded-xl outline-none resize-none text-stone-600"></textarea>
                     </section>
+
                     <section class="glass-card p-5">
                         <h4 class="font-bold mb-3 text-stone-700 text-sm">📝 其他備註</h4>
                         <textarea v-model="currentTrip.note" placeholder="寫下雜七雜八其他注意事項..." class="w-full h-32 p-3 text-sm bg-stone-50 rounded-xl outline-none resize-none text-stone-600"></textarea>
@@ -227,7 +228,8 @@
                     const range = prompt("日期 (例: 12/11-12/14)：", "");
                     const newTrip = {
                         title, dateRange: range || '', shopping: [], packing: [], expenses: [],
-                        schedule: [{ dateText: '', items: [], dayNote: '' }], note: ''
+                        schedule: [{ dateText: '', items: [], dayNote: '' }], 
+                        note: '', flightNote: '', hotelNote: '' // 初始化新欄位
                     };
                     const docRef = await addDoc(collection(db, "trips"), newTrip);
                     trips.value.push({ firebaseId: docRef.id, ...newTrip });
@@ -265,6 +267,9 @@
 
                 const viewTrip = (trip) => {
                     currentTrip.value = JSON.parse(JSON.stringify(trip));
+                    // 確保舊資料打開時也有新欄位，避免報錯
+                    if (currentTrip.value.flightNote === undefined) currentTrip.value.flightNote = '';
+                    if (currentTrip.value.hotelNote === undefined) currentTrip.value.hotelNote = '';
                     activeTab.value = 'itinerary';
                 };
 
