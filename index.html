@@ -63,13 +63,13 @@
 
         <div v-if="!currentTrip && currentUser" class="p-6">
             <header class="flex justify-between items-start mb-10 mt-4 w-full">
-                <div class="flex flex-col items-start flex-1">
-                    <img src="https://res.cloudinary.com/dr4mqazu5/image/upload/v1766806236/Frame_2_rh3ymb.png" alt="Tripy Logo" class="h-12 object-contain w-fit">
+                <div class="flex flex-col items-start">
+                    <img src="https://res.cloudinary.com/dr4mqazu5/image/upload/v1766806236/Frame_2_rh3ymb.png" alt="Tripy Logo" class="h-12 object-contain block">
                     <button @click="logout" class="text-[10px] text-stone-300 mt-1 text-left block">
                         登出 {{ currentUser.email }}
                     </button>
                 </div>
-                <button @click="addNewTrip" class="bg-theme-yellow text-white w-12 h-12 rounded-full shadow-lg flex items-center justify-center shrink-0 ml-4 mt-1">
+                <button @click="addNewTrip" class="bg-theme-yellow text-white w-12 h-12 rounded-full shadow-lg flex items-center justify-center shrink-0 mt-1 active:scale-90 transition-transform">
                     <i class="fas fa-plus"></i>
                 </button>
             </header>
