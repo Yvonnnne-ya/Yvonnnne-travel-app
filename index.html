@@ -78,8 +78,8 @@
                 <div v-for="(trip, index) in trips" :key="trip.firebaseId" 
                      @click="viewTrip(trip)"
                      class="glass-card p-6 relative cursor-pointer hover:border-orange-200 border border-transparent">
-                    <div class="pr-16">
-                        <div class="text-lg font-bold text-stone-700 w-full">{{ trip.title }}</div>
+                    <div class="pr-16 text-left">
+                        <div class="text-lg font-bold text-stone-700">{{ trip.title }}</div>
                         <div class="flex items-center gap-2 mt-2 text-stone-400 text-xs">
                             <i class="far fa-calendar-alt"></i>
                             <span>{{ trip.dateRange || '尚未設定日期' }}</span>
@@ -216,7 +216,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
-        const { createApp, ref, computed, onMounted } = Vue;
+        const { createApp, ref, computed } = Vue;
 
         createApp({
             setup() {
