@@ -35,7 +35,7 @@
         <div v-if="!currentTrip" class="p-6">
             <header class="flex justify-between items-center mb-10 mt-4">
                 <div class="flex items-center">
-                    <img src="https://res.cloudinary.com/dr4mqazu5/image/upload/v1766804906/Frame_1_vx67xm.png" alt="Tripy Logo" class="h-12 object-contain">
+                    <img src="https://res.cloudinary.com/dr4mqazu5/image/upload/v1766806236/Frame_2_rh3ymb.png" alt="Tripy Logo" class="h-12 object-contain">
                 </div>
                 <button @click="addNewTrip" class="bg-theme-yellow text-white w-12 h-12 rounded-full shadow-lg flex items-center justify-center">
                     <i class="fas fa-plus"></i>
@@ -64,10 +64,16 @@
         </div>
 
         <div v-else class="min-h-screen bg-stone-50/50 flex flex-col">
-            <nav class="bg-white p-4 flex items-center sticky top-0 z-10 shadow-sm">
-                <button @click="saveAndExit" class="text-stone-400 p-2"><i class="fas fa-chevron-left"></i></button>
-                <input v-model="currentTrip.title" class="flex-1 text-center font-bold text-stone-600 outline-none bg-transparent">
-                <div class="w-8"></div>
+            <nav class="bg-white p-4 flex flex-col sticky top-0 z-10 shadow-sm">
+                <div class="flex items-center w-full">
+                    <button @click="saveAndExit" class="text-stone-400 p-2"><i class="fas fa-chevron-left"></i></button>
+                    <input v-model="currentTrip.title" class="flex-1 text-center font-bold text-stone-600 outline-none bg-transparent text-lg">
+                    <div class="w-8"></div>
+                </div>
+                <div class="flex justify-center items-center gap-2 mt-1 pb-1">
+                    <i class="far fa-calendar-alt text-[10px] text-orange-custom"></i>
+                    <input v-model="currentTrip.dateRange" placeholder="設定旅程日期 (例: 12/11-12/14)" class="text-center text-xs text-stone-400 outline-none bg-stone-50 px-3 py-1 rounded-full w-48">
+                </div>
             </nav>
 
             <div class="flex justify-around bg-white text-xs tracking-widest border-b">
@@ -216,7 +222,6 @@
                 };
 
                 const addDayItem = (idx) => {
-                    // 使用強制賦值確保 Vue 3 監聽到變化
                     const items = currentTrip.value.schedule[idx].items || [];
                     items.push({ desc: '' });
                     currentTrip.value.schedule[idx].items = [...items];
