@@ -22,6 +22,9 @@
         .itinerary-container { display: flex; overflow-x: auto; gap: 20px; padding: 10px 0 30px 0; -webkit-overflow-scrolling: touch; }
         .itinerary-card { min-width: 85%; flex-shrink: 0; }
         input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        /* 優化行程備註的 textarea */
+        .item-note { font-size: 11px; line-height: 1.4; color: #94a3b8; width: 100%; background: transparent; border: none; outline: none; resize: none; overflow: hidden; }
+        .item-note:focus { color: #64748b; }
     </style>
 </head>
 <body>
@@ -72,7 +75,7 @@
                 </div>
                 <div class="flex justify-center items-center gap-2 mt-1 pb-1">
                     <i class="far fa-calendar-alt text-[10px] text-orange-custom"></i>
-                    <input v-model="currentTrip.dateRange" placeholder="設定旅程日期 (例: 12/11-12/14)" class="text-center text-xs text-stone-400 outline-none bg-stone-50 px-3 py-1 rounded-full w-48">
+                    <input v-model="currentTrip.dateRange" placeholder="設定旅程日期" class="text-center text-xs text-stone-400 outline-none bg-stone-50 px-3 py-1 rounded-full w-48">
                 </div>
             </nav>
 
@@ -111,11 +114,16 @@
                                 <input v-model="day.dateText" placeholder="日期 (例: 12/11)" class="text-right text-xs text-stone-400 outline-none w-24">
                             </div>
                             
-                            <div class="space-y-3 mb-6">
-                                <div v-for="(item, iIdx) in day.items" :key="iIdx" class="flex items-center gap-3 bg-stone-50/80 p-3 rounded-xl border border-stone-100">
-                                    <i class="fas fa-map-pin text-orange-custom/30 text-xs"></i>
-                                    <input v-model="item.desc" placeholder="要去哪裡呢？" class="flex-1 text-sm text-stone-600 bg-transparent outline-none">
-                                    <button @click="day.items.splice(iIdx, 1)" class="text-stone-200"><i class="fas fa-times-circle"></i></button>
+                            <div class="space-y-4 mb-6">
+                                <div v-for="(item, iIdx) in day.items" :key="iIdx" class="bg-stone-50/80 p-3 rounded-xl border border-stone-100">
+                                    <div class="flex items-center gap-3">
+                                        <i class="fas fa-map-pin text-orange-custom/30 text-xs"></i>
+                                        <input v-model="item.desc" placeholder="要去哪裡呢？" class="flex-1 text-sm font-medium text-stone-600 bg-transparent outline-none">
+                                        <button @click="day.items.splice(iIdx, 1)" class="text-stone-200"><i class="fas fa-times-circle"></i></button>
+                                    </div>
+                                    <div class="mt-2 pl-6 border-l border-orange-100">
+                                        <textarea v-model="item.note" placeholder="地址、店家資訊等備註..." class="item-note" rows="1" oninput="this.style.height = '';this.style.height = this.scrollHeight + 'px'"></textarea>
+                                    </div>
                                 </div>
                             </div>
 
@@ -223,7 +231,7 @@
 
                 const addDayItem = (idx) => {
                     const items = currentTrip.value.schedule[idx].items || [];
-                    items.push({ desc: '' });
+                    items.push({ desc: '', note: '' }); // 確保新項目有 note 欄位
                     currentTrip.value.schedule[idx].items = [...items];
                 };
 
