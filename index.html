@@ -185,13 +185,14 @@
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         const firebaseConfig = {
-            apiKey: "AIzaSyDNQ41J2u6V32w5OP7y49TLKXoWRRASSik",
-            authDomain: "tripy-275a7.firebaseapp.com",
-            projectId: "tripy-275a7",
-            storageBucket: "tripy-275a7.firebasestorage.app",
-            messagingSenderId: "1063817586690",
-            appId: "1:1063817586690:web:ee84458b2373cd4b20df1b"
-        };
+  apiKey: "AIzaSyDNQ41J2u6V32w5OP7y49TLKXoWRRASSik",
+  authDomain: "tripy-275a7.firebaseapp.com",
+  projectId: "tripy-275a7",
+  storageBucket: "tripy-275a7.firebasestorage.app",
+  messagingSenderId: "1063817586690",
+  appId: "1:1063817586690:web:ee84458b2373cd4b20df1b",
+  measurementId: "G-SEPL6BEGZL"
+};
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
