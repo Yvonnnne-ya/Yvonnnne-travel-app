@@ -94,33 +94,33 @@
             <div class="flex-1 p-5 overflow-y-auto">
                 
                 <div v-if="activeTab === 'checklist'" class="space-y-4 pb-10">
-                    <section v-for="type in ['shopping', 'packing']" :key="type" class="glass-card p-5">
-                        <h4 class="font-bold mb-4 text-stone-700 text-sm">{{ type === 'shopping' ? '🛒 購物清單' : '🎒 必帶物品' }}</h4>
-                        <div class="space-y-3">
-                            <div v-for="(item, idx) in currentTrip[type]" :key="idx" class="flex items-center gap-3">
-                                <input type="checkbox" v-model="item.done" class="rounded text-orange-custom w-4 h-4">
-                                <input v-model="item.text" class="flex-1 text-sm bg-transparent outline-none">
-                                <button @click="removeItem(type, idx)" class="text-stone-200"><i class="fas fa-times"></i></button>
-                            </div>
-                            <button @click="addItem(type)" class="text-orange-custom text-xs font-bold">+ 新增項目</button>
-                        </div>
-                    </section>
+    <section v-for="type in ['shopping', 'packing']" :key="type" class="glass-card p-5">
+        <h4 class="font-bold mb-4 text-stone-700 text-sm">{{ type === 'shopping' ? '🛒 購物清單' : '🎒 必帶物品' }}</h4>
+        <div class="space-y-3">
+            <div v-for="(item, idx) in currentTrip[type]" :key="idx" class="flex items-center gap-3">
+                <input type="checkbox" v-model="item.done" class="rounded text-orange-custom w-4 h-4">
+                <input v-model="item.text" class="flex-1 text-sm bg-transparent outline-none">
+                <button @click="removeItem(type, idx)" class="text-stone-200"><i class="fas fa-times"></i></button>
+            </div>
+            <button @click="addItem(type)" class="text-orange-custom text-xs font-bold">+ 新增項目</button>
+        </div>
+    </section>
 
-                    <section class="glass-card p-5">
-                        <h4 class="font-bold mb-3 text-stone-700 text-sm">🦦 班機資訊</h4>
-                        <textarea v-model="currentTrip.flightNote" class="w-full h-24 p-3 text-sm bg-stone-50 rounded-xl outline-none resize-none text-stone-600"></textarea>
-                    </section>
+    <section class="glass-card p-5">
+        <h4 class="font-bold mb-3 text-stone-700 text-sm">🦦 班機資訊</h4>
+        <textarea v-model="currentTrip.flightNote" placeholder="例如：去程 BR198 08:30 T2..." class="w-full h-24 p-3 text-sm bg-stone-50 rounded-xl outline-none resize-none text-stone-600"></textarea>
+    </section>
 
-                    <section class="glass-card p-5">
-                        <h4 class="font-bold mb-3 text-stone-700 text-sm">🍒 住宿資訊</h4>
-                        <textarea v-model="currentTrip.hotelNote" class="w-full h-24 p-3 text-sm bg-stone-50 rounded-xl outline-none resize-none text-stone-600"></textarea>
-                    </section>
+    <section class="glass-card p-5">
+        <h4 class="font-bold mb-3 text-stone-700 text-sm">🍒 住宿資訊</h4>
+        <textarea v-model="currentTrip.hotelNote" placeholder="例如：飯店地址、訂房代號..." class="w-full h-24 p-3 text-sm bg-stone-50 rounded-xl outline-none resize-none text-stone-600"></textarea>
+    </section>
 
-                    <section class="glass-card p-5">
-                        <h4 class="font-bold mb-3 text-stone-700 text-sm">📝 其他備註</h4>
-                        <textarea v-model="currentTrip.note" placeholder="寫下雜七雜八其他注意事項..." class="w-full h-32 p-3 text-sm bg-stone-50 rounded-xl outline-none resize-none text-stone-600"></textarea>
-                    </section>
-                </div>
+    <section class="glass-card p-5">
+        <h4 class="font-bold mb-3 text-stone-700 text-sm">📝 其他備註</h4>
+        <textarea v-model="currentTrip.note" placeholder="寫下雜七雜八其他注意事項..." class="w-full h-32 p-3 text-sm bg-stone-50 rounded-xl outline-none resize-none text-stone-600"></textarea>
+    </section>
+</div>
 
                 <div v-if="activeTab === 'itinerary'" class="space-y-6">
                     <div class="itinerary-container">
